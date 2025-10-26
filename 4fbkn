@@ -1,12 +1,20 @@
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local animatronics = {
     ["ToyChica"] = { color = Color3.fromRGB(255, 255, 0), npcName = "ToyChicaNPC" },
     ["ToyFreddy"] = { color = Color3.fromRGB(139, 69, 19), npcName = "ToyFreddyNPC" },
     ["ToyBonnie"] = { color = Color3.fromRGB(170, 0, 255), npcName = "ToyBonnieNPC" },
     ["ToyFoxy"] = { color = Color3.fromRGB(255, 69, 0), npcName = "ToyFoxyNPC" },
+    ["GoldenFreddy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "GoldenFreddyNPC" },
+    ["Puppet"] = { color = Color3.fromRGB(255, 255, 255), npcName = "PuppetNPC" },
+    ["Mangle"] = { color = Color3.fromRGB(180, 180, 180), npcName = "MangleNPC" },
+    ["BalloonBoy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "BalloonBoyNPC" },
+    ["Chica"] = { color = Color3.fromRGB(255, 255, 0), npcName = "ChicaNPC" },
+    ["Freddy"] = { color = Color3.fromRGB(241, 176, 58), npcName = "FreddyNPC" },
+    ["Bonnie"] = { color = Color3.fromRGB(0, 0, 255), npcName = "BonnieNPC" },
+    ["Foxy"] = { color = Color3.fromRGB(255, 69, 0), npcName = "FoxyNPC" }
 }
 
 local espEnabled = {}
@@ -16,7 +24,39 @@ local highlights = {}
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "AnimatronicESP_GUI"
 
--- Tombol Menu (draggable)
+-- Function draggable (bisa dipakai ke tombol atau frame)
+local function makeDraggable(frame)
+    frame.Active = true
+    local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(0, startPos.X.Offset + delta.X, 0, startPos.Y.Offset + delta.Y)
+    end
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+-- Tombol Menu
 local menuButton = Instance.new("TextButton", ScreenGui)
 menuButton.Size = UDim2.new(0, 100, 0, 30)
 menuButton.Position = UDim2.new(0, 20, 0, 20)
@@ -25,15 +65,104 @@ menuButton.TextColor3 = Color3.new(1,1,1)
 menuButton.Text = "Menu"
 menuButton.Font = Enum.Font.Arcade
 menuButton.TextSize = 14
+makeDraggable(menuButton)
 
--- Function draggable
-local function makeDraggable(frame)
-    frame.Active = true
-    local dragging, dragInput, startPos, dragStart = false, nil, nil, nil
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(0, startPos.X.Offset + delta.X, 0, startPos.Y.Offset + delta.Y)
+-- Frame Menu
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0, 200, 0, 300)
+frame.Position = UDim2.new(0, 20, 0, 60)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Visible = false
+makeDraggable(frame)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "Animatronic ESP"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundColor3 = Color3.fromRGB(40,40,40)
+title.Font = Enum.Font.Arcade
+title.TextSize = 16
+
+-- Scrollable menu
+local scrollFrame = Instance.new("ScrollingFrame", frame)
+scrollFrame.Size = UDim2.new(1,0,1,-70)
+scrollFrame.Position = UDim2.new(0,0,0,30)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollFrame.ScrollBarThickness = 6
+
+local uiListLayout = Instance.new("UIListLayout", scrollFrame)
+uiListLayout.Padding = UDim.new(0,5)
+uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- ESP Buttons
+for name, info in pairs(animatronics) do
+    espEnabled[name] = true
+    local btn = Instance.new("TextButton", scrollFrame)
+    btn.Size = UDim2.new(1,-10,0,30)
+    btn.Position = UDim2.new(0,5,0,0)
+    btn.BackgroundColor3 = info.color
+    btn.Text = "Toggle "..name.." [ON]"
+    btn.TextColor3 = Color3.new(0,0,0)
+    btn.Font = Enum.Font.Arcade
+    btn.TextSize = 14
+
+    btn.MouseButton1Click:Connect(function()
+        espEnabled[name] = not espEnabled[name]
+        btn.Text = "Toggle "..name..(espEnabled[name] and " [ON]" or " [OFF]")
+        if highlights[name] then highlights[name].Enabled = espEnabled[name] end
+    end)
+end
+
+-- Tombol Close frame (sembunyiin menu)
+local closeButton = Instance.new("TextButton", frame)
+closeButton.Size = UDim2.new(1, -10, 0, 30)
+closeButton.Position = UDim2.new(0,5,1,-35)
+closeButton.BackgroundColor3 = Color3.fromRGB(200,0,0)
+closeButton.TextColor3 = Color3.new(1,1,1)
+closeButton.Text = "Close"
+closeButton.Font = Enum.Font.Arcade
+closeButton.TextSize = 14
+closeButton.MouseButton1Click:Connect(function()
+    frame.Visible = false
+end)
+
+-- Toggle frame menu via menuButton
+menuButton.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- Update CanvasSize
+RunService.RenderStepped:Connect(function()
+    scrollFrame.CanvasSize = UDim2.new(0,0,0,uiListLayout.AbsoluteContentSize.Y)
+end)
+
+-- ESP Highlights
+RunService.RenderStepped:Connect(function()
+    local animFolder = workspace:FindFirstChild("Animatronics")
+    if not animFolder then return end
+    for name, info in pairs(animatronics) do
+        local folder = animFolder:FindFirstChild(name)
+        if folder then
+            local npc = folder:FindFirstChild(info.npcName)
+            if npc and not highlights[name] then
+                local highlight = Instance.new("Highlight")
+                highlight.FillTransparency = 0.4
+                highlight.OutlineTransparency = 0
+                highlight.FillColor = info.color
+                highlight.OutlineColor = Color3.new(0,0,0)
+                highlight.Adornee = npc
+                highlight.Enabled = espEnabled[name]
+                highlight.Parent = npc
+                highlights[name] = highlight
+            elseif npc and highlights[name] then
+                highlights[name].Adornee = npc
+            end
+        end
     end
+end)
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
