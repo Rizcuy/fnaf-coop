@@ -24,7 +24,7 @@ local highlights = {}
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "AnimatronicESP_GUI"
 
--- Function draggable (bisa dipakai ke tombol atau frame)
+-- Function draggable (tombol atau frame)
 local function makeDraggable(frame)
     frame.Active = true
     local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
@@ -34,6 +34,216 @@ local function makeDraggable(frame)
     end
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+-- Tombol Menu
+local menuButton = Instance.new("TextButton", ScreenGui)
+menuButton.Size = UDim2.new(0, 100, 0, 30)
+menuButton.Position = UDim2.new(0, 20, 0, 20)
+menuButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+menuButton.TextColor3 = Color3.new(1,1,1)
+menuButton.Text = "Menu"
+menuButton.Font = Enum.Font.Arcade
+menuButton.TextSize = 14
+makeDraggable(menuButton)
+
+-- Frame Menu
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0, 250, 0, 350)
+frame.Position = UDim2.new(0, 20, 0, 60)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Visible = false
+frame.BackgroundTransparency = 1 -- start hidden for fade
+makeDraggable(frame)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "Animatronic ESP"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundColor3 = Color3.fromRGB(40,40,40)
+title.Font = Enum.Font.Arcade
+title.TextSize = 16
+
+-- Scrollable menu
+local scrollFrame = Instance.new("ScrollingFrame", frame)
+scrollFrame.Size = UDim2.new(1,0,1,-70)
+scrollFrame.Position = UDim2.new(0,0,0,30)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollFrame.ScrollBarThickness = 6
+
+local uiListLayout = Instance.new("UIListLayout", scrollFrame)
+uiListLayout.Padding = UDim.new(0,5)
+uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- ESP Buttons
+for name, info in pairs(animatronics) do
+    espEnabled[name] = true
+    local btn = Instance.new("TextButton", scrollFrame)
+    btn.Size = UDim2.new(1,-10,0,30)
+    btn.Position = UDim2.new(0,5,0,0)
+    btn.BackgroundColor3 = info.color
+    btn.Text = "Toggle "..name.." [ON]"
+    btn.TextColor3 = Color3.new(0,0,0)
+    btn.Font = Enum.Font.Arcade
+    btn.TextSize = 14
+
+    btn.MouseButton1Click:Connect(function()
+        espEnabled[name] = not espEnabled[name]
+        btn.Text = "Toggle "..name..(espEnabled[name] and " [ON]" or " [OFF]")
+        if highlights[name] then highlights[name].Enabled = espEnabled[name] end
+    end)
+end
+
+-- Container tombol bawah (2 tombol)
+local buttonContainer = Instance.new("Frame", frame)
+buttonContainer.Size = UDim2.new(1,0,0,30)
+buttonContainer.Position = UDim2.new(0,0,1,-35)
+buttonContainer.BackgroundTransparency = 1
+
+local closeButton = Instance.new("TextButton", buttonContainer)
+closeButton.Size = UDim2.new(0.48, -5,1,0)
+closeButton.Position = UDim2.new(0,0,0,0)
+closeButton.BackgroundColor3 = Color3.fromRGB(200,0,0)
+closeButton.TextColor3 = Color3.new(1,1,1)
+closeButton.Text = "Close"
+closeButton.Font = Enum.Font.Arcade
+closeButton.TextSize = 14
+closeButton.MouseButton1Click:Connect(function()
+    -- Force stop script
+    ScreenGui:Destroy()
+    for _, highlight in pairs(highlights) do
+        if highlight and highlight.Parent then
+            highlight:Destroy()
+        end
+    end
+    highlights = {}
+end)
+
+local hideButton = Instance.new("TextButton", buttonContainer)
+hideButton.Size = UDim2.new(0.48, -5,1,0)
+hideButton.Position = UDim2.new(0.52,5,0,0)
+hideButton.BackgroundColor3 = Color3.fromRGB(100,100,100)
+hideButton.TextColor3 = Color3.new(1,1,1)
+hideButton.Text = "Hide"
+hideButton.Font = Enum.Font.Arcade
+hideButton.TextSize = 14
+hideButton.MouseButton1Click:Connect(function()
+    -- Fade out then hide
+    TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+    for _, child in pairs(frame:GetChildren()) do
+        if child:IsA("TextLabel") or child:IsA("ScrollingFrame") or child:IsA("Frame") or child:IsA("TextButton") then
+            TweenService:Create(child, TweenInfo.new(0.3), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+        end
+    end
+    task.wait(0.3)
+    frame.Visible = false
+    -- Reset transparencies for next show
+    frame.BackgroundTransparency = 0
+    for _, child in pairs(frame:GetChildren()) do
+        if child:IsA("TextLabel") or child:IsA("ScrollingFrame") or child:IsA("Frame") or child:IsA("TextButton") then
+            child.BackgroundTransparency = 0
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                child.TextTransparency = 0
+            end
+        end
+    end
+end)
+
+-- Toggle frame menu via menuButton (fade in)
+menuButton.MouseButton1Click:Connect(function()
+    if frame.Visible then
+        -- fade out
+        TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        for _, child in pairs(frame:GetChildren()) do
+            if child:IsA("TextLabel") or child:IsA("ScrollingFrame") or child:IsA("Frame") or child:IsA("TextButton") then
+                TweenService:Create(child, TweenInfo.new(0.3), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
+            end
+        end
+        task.wait(0.3)
+        frame.Visible = false
+        -- reset transparencies
+        frame.BackgroundTransparency = 0
+        for _, child in pairs(frame:GetChildren()) do
+            if child:IsA("TextLabel") or child:IsA("ScrollingFrame") or child:IsA("Frame") or child:IsA("TextButton") then
+                child.BackgroundTransparency = 0
+                if child:IsA("TextLabel") or child:IsA("TextButton") then
+                    child.TextTransparency = 0
+                end
+            end
+        end
+    else
+        frame.Visible = true
+        -- fade in
+        frame.BackgroundTransparency = 1
+        for _, child in pairs(frame:GetChildren()) do
+            if child:IsA("TextLabel") or child:IsA("ScrollingFrame") or child:IsA("Frame") or child:IsA("TextButton") then
+                child.BackgroundTransparency = 1
+                if child:IsA("TextLabel") or child:IsA("TextButton") then
+                    child.TextTransparency = 1
+                end
+            end
+        end
+        TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+        for _, child in pairs(frame:GetChildren()) do
+            if child:IsA("TextLabel") or child:IsA("ScrollingFrame") or child:IsA("Frame") or child:IsA("TextButton") then
+                TweenService:Create(child, TweenInfo.new(0.3), {BackgroundTransparency = 0, TextTransparency = 0}):Play()
+            end
+        end
+    end
+end)
+
+-- Update CanvasSize
+RunService.RenderStepped:Connect(function()
+    scrollFrame.CanvasSize = UDim2.new(0,0,0,uiListLayout.AbsoluteContentSize.Y)
+end)
+
+-- ESP Highlights
+RunService.RenderStepped:Connect(function()
+    local animFolder = workspace:FindFirstChild("Animatronics")
+    if not animFolder then return end
+    for name, info in pairs(animatronics) do
+        local folder = animFolder:FindFirstChild(name)
+        if folder then
+            local npc = folder:FindFirstChild(info.npcName)
+            if npc and not highlights[name] then
+                local highlight = Instance.new("Highlight")
+                highlight.FillTransparency = 0.4
+                highlight.OutlineTransparency = 0
+                highlight.FillColor = info.color
+                highlight.OutlineColor = Color3.new(0,0,0)
+                highlight.Adornee = npc
+                highlight.Enabled = espEnabled[name]
+                highlight.Parent = npc
+                highlights[name] = highlight
+            elseif npc and highlights[name] then
+                highlights[name].Adornee = npc
+            end
+        end
+    end
+end)
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
