@@ -7,14 +7,14 @@ local animatronics = {
     ["ToyFreddy"] = { color = Color3.fromRGB(139, 69, 19), npcName = "ToyFreddyNPC" },
     ["ToyBonnie"] = { color = Color3.fromRGB(170, 0, 255), npcName = "ToyBonnieNPC" },
     ["ToyFoxy"] = { color = Color3.fromRGB(255, 69, 0), npcName = "ToyFoxyNPC" },
-    ["GoldenFreddy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "GoldenFreddyNPC" }
-    ["Puppet"] = { color = Color3.fromRGB(255, 255, 255), npcName = "PuppetNPC" }
-    ["Mangle"] = { color = Color3.fromRGB(180, 180, 180), npcName = "MangleNPC" }
-    ["BalloonBoy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "BalloonBoyNPC" }
-    ["Chica"] = { color = Color3.fromRGB(255, 255, 0), npcName = "ToyChicaNPC" },
-    ["Freddy"] = { color = Color3.fromRGB(241, 176, 58), npcName = "ToyFreddyNPC" },
-    ["Bonnie"] = { color = Color3.fromRGB(0, 0, 255), npcName = "ToyBonnieNPC" },
-    ["Foxy"] = { color = Color3.fromRGB(255, 69, 0), npcName = "FoxyNPC" }
+    ["GoldenFreddy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "GoldenFreddyNPC" },
+    ["Puppet"] = { color = Color3.fromRGB(255, 255, 255), npcName = "PuppetNPC" },
+    ["Mangle"] = { color = Color3.fromRGB(180, 180, 180), npcName = "MangleNPC" },
+    ["BalloonBoy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "BalloonBoyNPC" },
+    ["Chica"] = { color = Color3.fromRGB(255, 165, 0), npcName = "ChicaNPC" },
+    ["Freddy"] = { color = Color3.fromRGB(255, 176, 58), npcName = "FreddyNPC" },
+    ["Bonnie"] = { color = Color3.fromRGB(106, 90, 255), npcName = "BonnieNPC" },
+    ["Foxy"] = { color = Color3.fromRGB(255, 0, 0), npcName = "FoxyNPC" }
 }
 
 local espEnabled = {}
