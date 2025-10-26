@@ -1,0 +1,218 @@
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local animatronics = {
+    ["ToyChica"] = { color = Color3.fromRGB(255, 255, 0), npcName = "ToyChicaNPC" },
+    ["ToyFreddy"] = { color = Color3.fromRGB(139, 69, 19), npcName = "ToyFreddyNPC" },
+    ["ToyBonnie"] = { color = Color3.fromRGB(170, 0, 255), npcName = "ToyBonnieNPC" },
+    ["ToyFoxy"] = { color = Color3.fromRGB(255, 69, 0), npcName = "ToyFoxyNPC" },
+    ["GoldenFreddy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "GoldenFreddyNPC" },
+    ["Puppet"] = { color = Color3.fromRGB(255, 255, 255), npcName = "PuppetNPC" },
+    ["Mangle"] = { color = Color3.fromRGB(180, 180, 180), npcName = "MangleNPC" },
+    ["BalloonBoy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "BalloonBoyNPC" },
+    ["Chica"] = { color = Color3.fromRGB(255, 255, 0), npcName = "ToyChicaNPC" },
+    ["Freddy"] = { color = Color3.fromRGB(241, 176, 58), npcName = "ToyFreddyNPC" },
+    ["Bonnie"] = { color = Color3.fromRGB(0, 0, 255), npcName = "ToyBonnieNPC" },
+    ["Foxy"] = { color = Color3.fromRGB(255, 69, 0), npcName = "FoxyNPC" }
+}
+
+local espEnabled = {}
+local highlights = {}
+local connections = {}
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "AnimatronicESP_GUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Sound
+local sound = Instance.new("Sound")
+sound.SoundId = "rbxassetid://876939830"
+sound.Volume = 0.6
+sound.Parent = ScreenGui
+
+local function playClick()
+    if sound.IsLoaded then
+        sound:Play()
+    else
+        sound.Loaded:Wait()
+        sound:Play()
+    end
+end
+
+-- Draggable function
+local function makeDraggable(frame, dragHandle)
+    dragHandle = dragHandle or frame
+    dragHandle.Active = true
+
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        local newPos = UDim2.new(
+            0,
+            math.clamp(startPos.X.Offset + delta.X, 0, workspace.CurrentCamera.ViewportSize.X - frame.AbsoluteSize.X),
+            0,
+            math.clamp(startPos.Y.Offset + delta.Y, 0, workspace.CurrentCamera.ViewportSize.Y - frame.AbsoluteSize.Y)
+        )
+        frame.Position = newPos
+    end
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    dragHandle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+-- Loading Frame
+local loadingFrame = Instance.new("Frame", ScreenGui)
+loadingFrame.Size = UDim2.new(1, 0, 1, 0)
+loadingFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+
+local loadingText = Instance.new("TextLabel", loadingFrame)
+loadingText.Size = UDim2.new(1, 0, 1, 0)
+loadingText.Text = "Loading ESP..."
+loadingText.TextColor3 = Color3.fromRGB(255, 255, 0)
+loadingText.Font = Enum.Font.Arcade
+loadingText.TextScaled = true
+loadingText.BackgroundTransparency = 1
+
+task.wait(2)
+TweenService:Create(loadingFrame, TweenInfo.new(1, Enum.EasingStyle.Quad), {BackgroundTransparency = 1}):Play()
+TweenService:Create(loadingText, TweenInfo.new(1, Enum.EasingStyle.Quad), {TextTransparency = 1}):Play()
+task.wait(1)
+loadingFrame:Destroy()
+
+-- Main Frame
+local frame = Instance.new("Frame", ScreenGui)
+frame.Size = UDim2.new(0, 200, 0, 250)
+frame.Position = UDim2.new(0, 20, 0, 60)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.ClipsDescendants = true
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+title.Text = "Animatronic ESP"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.Arcade
+title.TextSize = 20
+makeDraggable(frame, title)
+
+local versionLabel = Instance.new("TextLabel", frame)
+versionLabel.Size = UDim2.new(1, 0, 0, 20)
+versionLabel.Position = UDim2.new(0, 0, 0, 30)
+versionLabel.BackgroundTransparency = 1
+versionLabel.Text = "Version 1.0"
+versionLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+versionLabel.Font = Enum.Font.Arcade
+versionLabel.TextSize = 14
+
+-- Scrollable menu
+local scrollFrame = Instance.new("ScrollingFrame", frame)
+scrollFrame.Size = UDim2.new(1, 0, 1, -100) -- sisain space buat tombol close
+scrollFrame.Position = UDim2.new(0, 0, 0, 50)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.BorderSizePixel = 0
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.ScrollBarThickness = 6
+scrollFrame.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local uiListLayout = Instance.new("UIListLayout", scrollFrame)
+uiListLayout.Padding = UDim.new(0, 5)
+uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- ESP toggle buttons
+for name, info in pairs(animatronics) do
+    espEnabled[name] = true
+    local button = Instance.new("TextButton", scrollFrame)
+    button.Size = UDim2.new(1, -10, 0, 30)
+    button.BackgroundColor3 = info.color
+    button.Text = "Toggle " .. name .. " [ON]"
+    button.TextColor3 = Color3.new(0, 0, 0)
+    button.Font = Enum.Font.Arcade
+    button.TextSize = 16
+
+    button.MouseButton1Click:Connect(function()
+        espEnabled[name] = not espEnabled[name]
+        button.Text = "Toggle " .. name .. (espEnabled[name] and " [ON]" or " [OFF]")
+        playClick()
+        if highlights[name] then
+            highlights[name].Enabled = espEnabled[name]
+        end
+    end)
+end
+
+-- Close button di bawah menu
+local closeMenuButton = Instance.new("TextButton", frame)
+closeMenuButton.Size = UDim2.new(1, -10, 0, 30)
+closeMenuButton.Position = UDim2.new(0, 5, 1, -40) -- di bawah menu
+closeMenuButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+closeMenuButton.TextColor3 = Color3.new(1, 1, 1)
+closeMenuButton.Text = "Close ESP"
+closeMenuButton.Font = Enum.Font.Arcade
+closeMenuButton.TextSize = 16
+
+closeMenuButton.MouseButton1Click:Connect(function()
+    playClick()
+    -- force stop script
+    for _, conn in pairs(connections) do
+        if conn then conn:Disconnect() end
+    end
+    for _, hl in pairs(highlights) do
+        if hl then hl:Destroy() end
+    end
+    if ScreenGui then ScreenGui:Destroy() end
+end)
+
+-- RenderStepped ESP
+connections.RenderStepped = RunService.RenderStepped:Connect(function()
+    local animFolder = workspace:FindFirstChild("Animatronics")
+    if not animFolder then return end
+
+    for name, info in pairs(animatronics) do
+        local folder = animFolder:FindFirstChild(name)
+        if folder then
+            local npc = folder:FindFirstChild(info.npcName)
+            if npc and not highlights[name] then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = name .. "_Highlight"
+                highlight.FillTransparency = 0.4
+                highlight.OutlineTransparency = 0
+                highlight.FillColor = info.color
+                highlight.OutlineColor = Color3.new(0, 0, 0)
+                highlight.Adornee = npc
+                highlight.Enabled = espEnabled[name]
+                highlight.Parent = npc
+                highlights[name] = highlight
+            elseif npc and highlights[name] then
+                highlights[name].Adornee = npc
+            end
+        end
+    end
+end)
