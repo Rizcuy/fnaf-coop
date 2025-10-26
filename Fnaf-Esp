@@ -11,7 +11,7 @@ local animatronics = {
     ["Puppet"] = { color = Color3.fromRGB(255, 255, 255), npcName = "PuppetNPC" },
     ["Mangle"] = { color = Color3.fromRGB(180, 180, 180), npcName = "MangleNPC" },
     ["BalloonBoy"] = { color = Color3.fromRGB(255, 215, 0), npcName = "BalloonBoyNPC" },
-    ["Chica"] = { color = Color3.fromRGB(255, 165, 0), npcName = "ChicaNPC" },
+    ["Chica"] = { color = Color3.fromRGB(255, 232, 0), npcName = "ChicaNPC" },
     ["Freddy"] = { color = Color3.fromRGB(255, 176, 58), npcName = "FreddyNPC" },
     ["Bonnie"] = { color = Color3.fromRGB(106, 90, 255), npcName = "BonnieNPC" },
     ["Foxy"] = { color = Color3.fromRGB(255, 0, 0), npcName = "FoxyNPC" }
@@ -114,8 +114,6 @@ toggleButton.TextSize = 10
 toggleButton.MouseButton1Click:Connect(function()
     playClick()
 end)
-
-makeDraggable(toggleButton)
 
 local frame = Instance.new("Frame", ScreenGui)
 frame.Size = UDim2.new(0, 200, 0, 250)
